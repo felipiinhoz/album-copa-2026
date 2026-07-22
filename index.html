@@ -365,7 +365,6 @@
   </div>
 </div>
 
-<!-- INPUT INVISÍVEL PARA IMPORTAR FILE BACKUP -->
 <input type="file" id="importFileInput" accept=".json" style="display:none;" />
 
 <div class="app">
@@ -447,7 +446,70 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-/* ===================== DATA (ORDEM EXATA DA PLANILHA DO ÁLBUM) ===================== */
+/* MAPA DE CONVERSÃO DE SIGLAS ANTIGAS PARA AS NOVAS */
+const CODE_MAP = {
+  'ALE': 'GER',
+  'AFS': 'RSA',
+  'COR': 'KOR',
+  'TCH': 'CZE',
+  'ESC': 'SCO',
+  'EUA': 'USA',
+  'EGI': 'EGY',
+  'IRA': 'IRN',
+  'SUE': 'SWE',
+  'CBV': 'CPV',
+  'CDM': 'CIV',
+  'HOL': 'NED',
+  'JAP': 'JPN',
+  'CAT': 'QAT',
+  'EQU': 'ECU',
+  'ARS': 'KSA',
+  'ARG2': 'ALG',
+  'RDC': 'COD',
+  'ING': 'ENG',
+  'GAN': 'GHA'
+};
+
+/* FUNÇÃO QUE RECUPERA OS DADOS ANTIGOS AUTOMATICAMENTE */
+function migrateOldData(rawStatus){
+  if(!rawStatus) return {};
+  const migrated = {};
+  let needsSave = false;
+
+  for(const [key, count] of Object.entries(rawStatus)){
+    if(!count) continue;
+    let newKey = key;
+
+    if(key === 'SOMOS26'){
+      newKey = 'FWC-0';
+      needsSave = true;
+    } else if(key.startsWith('MUS-')){
+      const num = parseInt(key.replace('MUS-', ''));
+      if(!isNaN(num)){
+        newKey = `FWC-${num + 8}`;
+        needsSave = true;
+      }
+    } else if(key.includes('-')){
+      const parts = key.split('-');
+      const oldCode = parts[0];
+      const rest = parts.slice(1).join('-');
+      if(CODE_MAP[oldCode]){
+        newKey = `${CODE_MAP[oldCode]}-${rest}`;
+        needsSave = true;
+      }
+    }
+
+    migrated[newKey] = (migrated[newKey] || 0) + count;
+  }
+
+  if(needsSave){
+    scheduleSaveStatus();
+  }
+
+  return migrated;
+}
+
+/* ===================== DATA ===================== */
 const SPECIAL_SECTIONS_TOP = [
   {code:'FWC', name:'FIFA World Cup History (FWC 0-8)', flag:'🏆', sub:'9 figurinhas especiais · FWC 0–8', slots: Array.from({length:9},(_,i)=>({id:`FWC-${i}`, num:i, label:`FWC ${i}`, special:true}))}
 ];
@@ -577,7 +639,8 @@ function listenStatus(){
   const albumDoc = doc(db, 'app_copa2026', `profile_${currentProfile}`);
   unsubscribeStatus = onSnapshot(albumDoc, (docSnap) => {
     if(docSnap.exists()){
-      status = docSnap.data().status || {};
+      const raw = docSnap.data().status || {};
+      status = migrateOldData(raw);
     } else {
       status = {};
     }
@@ -873,10 +936,7 @@ document.getElementById('btnExportBackup').addEventListener('click', async () =>
     statusData: {}
   };
 
-  // Coleta os dados de todos os perfis cadastrados
   for(const prof of profilesList){
-    const albumDoc = doc(db, 'app_copa2026', `profile_${prof}`);
-    // Usamos o status local se for o perfil ativo, senão lemos do estado se disponível
     backupData.statusData[prof] = (prof === currentProfile) ? status : {};
   }
 
