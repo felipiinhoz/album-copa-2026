@@ -103,10 +103,7 @@
   }
   .subtitle{ color:#a9c0ab; font-size:13.5px; margin-top:6px; }
 
-  /* BOTÃO MOBILE FIXO NO TOPO DA TELA */
-  .header-top-row {
-    display: none;
-  }
+  .header-top-row { display: none; }
   .mobile-menu-btn {
     font-family: 'Inter';
     font-size: 13px;
@@ -120,7 +117,6 @@
     box-shadow: 0 4px 12px rgba(0,0,0,0.4);
   }
 
-  /* Perfis UI */
   .profile-container {
     display: flex;
     align-items: center;
@@ -184,7 +180,6 @@
   }
   .action-btn:hover{ border-color:var(--gold); color:var(--gold-bright); }
 
-  /* Modal Gerenciamento de Perfis */
   .modal-overlay {
     position: fixed; top:0; left:0; right:0; bottom:0;
     background: rgba(0,0,0,0.7); z-index: 200; display: none;
@@ -303,7 +298,6 @@
 
   footer{ text-align:center; color:#6f8a75; font-size:11.5px; margin-top:30px; font-family:'Space Mono'; }
 
-  /* RESPONSIVIDADE MOBILE (<= 880px) */
   @media (max-width: 880px){
     .header-top-row {
       display: flex;
@@ -379,7 +373,6 @@
   </nav>
 
   <main class="main">
-    <!-- BOTÃO FIXO DE SELEÇÕES NO MOBILE -->
     <div class="header-top-row">
       <button class="mobile-menu-btn" id="btnToggleMenu">☰ Seleções</button>
     </div>
@@ -390,7 +383,6 @@
         <div class="subtitle">980 figurinhas · 48 seleções + especiais — dados sincronizados na nuvem ☁️</div>
       </div>
       
-      <!-- CONTROLE DE PERFIS -->
       <div class="profile-container">
         <label for="profileSelect" style="font-size:12px; color:var(--cream-dim);">Perfil:</label>
         <select id="profileSelect"></select>
@@ -438,7 +430,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
 import { getFirestore, doc, onSnapshot, setDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-// CHAVES DO SEU PROJETO NO FIREBASE
 const firebaseConfig = {
   apiKey: "AIzaSyC852CSAbZibXwzMUZBT5PUafOTUAcQJag",
   authDomain: "album-copa-2026-750e8.firebaseapp.com",
@@ -449,68 +440,55 @@ const firebaseConfig = {
   measurementId: "G-NP3RHVTKBB"
 };
 
-// Inicializa Firebase
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
 /* ===================== DATA (ORDEM OFICIAL DA PANINI COPA 2026) ===================== */
 const TEAMS = [
-  // GRUPO A
   {code:'MEX', name:'México', flag:'🇲🇽', conf:'CONCACAF', group:'Grupo A'},
   {code:'AFS', name:'África do Sul', flag:'🇿🇦', conf:'CAF', group:'Grupo A'},
   {code:'COR', name:'Coreia do Sul', flag:'🇰🇷', conf:'AFC', group:'Grupo A'},
   {code:'TCH', name:'República Tcheca', flag:'🇨🇿', conf:'UEFA', group:'Grupo A'},
-  // GRUPO B
   {code:'CAN', name:'Canadá', flag:'🇨🇦', conf:'CONCACAF', group:'Grupo B'},
   {code:'EGI', name:'Egito', flag:'🇪🇬', conf:'CAF', group:'Grupo B'},
   {code:'IRA', name:'Irã', flag:'🇮🇷', conf:'AFC', group:'Grupo B'},
   {code:'SUE', name:'Suécia', flag:'🇸🇪', conf:'UEFA', group:'Grupo B'},
-  // GRUPO C
   {code:'EUA', name:'Estados Unidos', flag:'🇺🇸', conf:'CONCACAF', group:'Grupo C'},
   {code:'SEN', name:'Senegal', flag:'🇸🇳', conf:'CAF', group:'Grupo C'},
   {code:'JAP', name:'Japão', flag:'🇯🇵', conf:'AFC', group:'Grupo C'},
   {code:'AUT', name:'Áustria', flag:'🇦🇹', conf:'UEFA', group:'Grupo C'},
-  // GRUPO D
   {code:'ESP', name:'Espanha', flag:'🇪🇸', conf:'UEFA', group:'Grupo D'},
   {code:'TUN', name:'Tunísia', flag:'🇹🇳', conf:'CAF', group:'Grupo D'},
   {code:'AUS', name:'Austrália', flag:'🇦🇺', conf:'AFC', group:'Grupo D'},
   {code:'PAR', name:'Paraguai', flag:'🇵🇾', conf:'CONMEBOL', group:'Grupo D'},
-  // GRUPO E
   {code:'ALE', name:'Alemanha', flag:'🇩🇪', conf:'UEFA', group:'Grupo E'},
   {code:'CBV', name:'Cabo Verde', flag:'🇨🇻', conf:'CAF', group:'Grupo E'},
   {code:'CAT', name:'Catar', flag:'🇶🇦', conf:'AFC', group:'Grupo E'},
   {code:'EQU', name:'Equador', flag:'🇪🇨', conf:'CONMEBOL', group:'Grupo E'},
-  // GRUPO F
   {code:'FRA', name:'França', flag:'🇫🇷', conf:'UEFA', group:'Grupo F'},
   {code:'GAN', name:'Gana', flag:'🇬🇭', conf:'CAF', group:'Grupo F'},
   {code:'UZB', name:'Uzbequistão', flag:'🇺ℤ', conf:'AFC', group:'Grupo F'},
   {code:'COL', name:'Colômbia', flag:'🇨🇴', conf:'CONMEBOL', group:'Grupo F'},
-  // GRUPO G
   {code:'ARG', name:'Argentina', flag:'🇦🇷', conf:'CONMEBOL', group:'Grupo G'},
   {code:'MAR', name:'Marrocos', flag:'🇲🇦', conf:'CAF', group:'Grupo G'},
   {code:'JOR', name:'Jordânia', flag:'🇯🇴', conf:'AFC', group:'Grupo G'},
   {code:'ESC', name:'Escócia', flag:'🏴', conf:'UEFA', group:'Grupo G'},
-  // GRUPO H
   {code:'BRA', name:'Brasil', flag:'🇧🇷', conf:'CONMEBOL', group:'Grupo H'},
   {code:'CDM', name:'Costa do Marfim', flag:'🇨🇮', conf:'CAF', group:'Grupo H'},
   {code:'ARS', name:'Arábia Saudita', flag:'🇸🇦', conf:'AFC', group:'Grupo H'},
   {code:'SUI', name:'Suíça', flag:'🇨🇭', conf:'UEFA', group:'Grupo H'},
-  // GRUPO I
   {code:'ING', name:'Inglaterra', flag:'🏴', conf:'UEFA', group:'Grupo I'},
   {code:'ARG2', name:'Argélia', flag:'🇩🇿', conf:'CAF', group:'Grupo I'},
   {code:'URU', name:'Uruguai', flag:'🇺🇾', conf:'CONMEBOL', group:'Grupo I'},
   {code:'HAI', name:'Haiti', flag:'🇭🇹', conf:'CONCACAF', group:'Grupo I'},
-  // GRUPO J
   {code:'POR', name:'Portugal', flag:'🇵🇹', conf:'UEFA', group:'Grupo J'},
   {code:'CRO', name:'Croácia', flag:'🇭🇷', conf:'UEFA', group:'Grupo J'},
   {code:'PAN', name:'Panamá', flag:'🇵🇦', conf:'CONCACAF', group:'Grupo J'},
   {code:'NZL', name:'Nova Zelândia', flag:'🇳🇿', conf:'OFC', group:'Grupo J'},
-  // GRUPO K
   {code:'HOL', name:'Holanda', flag:'🇳🇱', conf:'UEFA', group:'Grupo K'},
   {code:'NOR', name:'Noruega', flag:'🇳🇴', conf:'UEFA', group:'Grupo K'},
   {code:'CUR', name:'Curaçao', flag:'🇨🇼', conf:'CONCACAF', group:'Grupo K'},
   {code:'RDC', name:'RD Congo', flag:'🇨🇩', conf:'Repescagem', group:'Grupo K'},
-  // GRUPO L
   {code:'BEL', name:'Bélgica', flag:'🇧🇪', conf:'UEFA', group:'Grupo L'},
   {code:'BIH', name:'Bósnia e Herzegovina', flag:'🇧🇦', conf:'UEFA', group:'Grupo L'},
   {code:'TUR', name:'Turquia', flag:'🇹🇷', conf:'UEFA', group:'Grupo L'},
@@ -519,29 +497,16 @@ const TEAMS = [
 
 const GROUPS_ORDER = ['Grupo A', 'Grupo B', 'Grupo C', 'Grupo D', 'Grupo E', 'Grupo F', 'Grupo G', 'Grupo H', 'Grupo I', 'Grupo J', 'Grupo K', 'Grupo L'];
 
-/* CONSTRUÇÃO REAL DO ÁLBUM:
-   - Nº 1: Escudo (Especial)
-   - Nº 2 a 12: Jogadores 1 a 11
-   - Nº 13: Foto do time (Especial)
-   - Nº 14 a 20: Jogadores 12 a 18
-*/
 function buildTeamSlots(team){
   const slots = [];
   slots.push({id:`${team.code}-01`, num:1, label:'Escudo', special:true});
-  
-  // Jogadores 1 a 11 (Nº 2 a 12)
   for(let i=1; i<=11; i++){
     slots.push({id:`${team.code}-${String(i+1).padStart(2,'0')}`, num:i+1, label:`Jogador ${i}`, special:false});
   }
-  
-  // Foto do time (Nº 13)
   slots.push({id:`${team.code}-13`, num:13, label:'Foto do time', special:true});
-  
-  // Jogadores 12 a 18 (Nº 14 a 20)
   for(let i=12; i<=18; i++){
     slots.push({id:`${team.code}-${String(i+2).padStart(2,'0')}`, num:i+2, label:`Jogador ${i}`, special:false});
   }
-  
   return slots;
 }
 
@@ -555,6 +520,14 @@ const TEAM_SECTIONS = TEAMS.map(t => ({...t, sub:'20 figurinhas · escudo, foto 
 const ALL_SECTIONS = [...SPECIAL_SECTIONS, ...TEAM_SECTIONS];
 const TOTAL_STICKERS = ALL_SECTIONS.reduce((s,sec)=>s+sec.slots.length,0);
 
+/* Mapeamento rápido de slot -> seleção */
+const SLOT_TO_SECTION = {};
+ALL_SECTIONS.forEach(sec => {
+  sec.slots.forEach(s => {
+    SLOT_TO_SECTION[s.id] = sec.code;
+  });
+});
+
 /* ===================== STATE ===================== */
 let status = {}; 
 let currentFilter = 'all';
@@ -562,6 +535,8 @@ let currentProfile = 'Joaquim';
 let profilesList = ['Joaquim', 'Matheus', 'João'];
 let unsubscribeStatus = null;
 let unsubscribeProfiles = null;
+let saveTimer = null;
+let isPagesRendered = false;
 
 function listenProfilesList(){
   if(unsubscribeProfiles) unsubscribeProfiles();
@@ -589,23 +564,32 @@ function listenStatus(){
       status = {};
     }
     el.textContent = 'Sincronizado na nuvem ☁️';
-    renderPages();
-    refreshAll();
+    
+    if(!isPagesRendered){
+      renderPages();
+    } else {
+      updateAllSlotsUI();
+    }
+    refreshAllStats();
   }, (err) => {
     el.textContent = 'Erro ao conectar!';
   });
 }
 
-async function saveStatus(){
+/* DEBOUNCE DO SALVAMENTO PRO FIREBASE */
+function scheduleSaveStatus(){
   const el = document.getElementById('loadState');
   el.textContent = 'Salvando...';
-  try {
-    const albumDoc = doc(db, 'app_copa2026', `profile_${currentProfile}`);
-    await setDoc(albumDoc, { status });
-    el.textContent = 'Sincronizado na nuvem ☁️';
-  } catch(e) {
-    el.textContent = 'Erro ao salvar!';
-  }
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(async () => {
+    try {
+      const albumDoc = doc(db, 'app_copa2026', `profile_${currentProfile}`);
+      await setDoc(albumDoc, { status });
+      el.textContent = 'Sincronizado na nuvem ☁️';
+    } catch(e) {
+      el.textContent = 'Erro ao salvar!';
+    }
+  }, 400);
 }
 
 async function saveProfilesList(){
@@ -613,7 +597,7 @@ async function saveProfilesList(){
   await setDoc(profilesDoc, { list: profilesList });
 }
 
-/* ===================== RENDER ===================== */
+/* ===================== RENDER OTIMIZADO ===================== */
 function renderProfileSelector(){
   const select = document.getElementById('profileSelect');
   select.innerHTML = profilesList.map(p => `<option value="${p}" ${p === currentProfile ? 'selected' : ''}>${p}</option>`).join('');
@@ -699,34 +683,41 @@ function renderPages(){
     html += `</div></section>`;
   });
   container.innerHTML = html;
+  isPagesRendered = true;
   attachSlotEvents();
 }
 
+/* EVENTOS DE CLIQUE SEM RE-RENDER TOTAL DO DOM */
 function attachSlotEvents(){
-  document.querySelectorAll('.slot').forEach(slotEl=>{
-    slotEl.addEventListener('click', (e)=>{
-      if(e.target.dataset.minus) return;
+  const container = document.getElementById('pages');
+  
+  container.addEventListener('click', (e) => {
+    const minusBtn = e.target.closest('.slot-minus');
+    if(minusBtn){
+      e.stopPropagation();
+      const id = minusBtn.dataset.minus;
+      status[id] = Math.max(0, (status[id]||0) - 1);
+      if(status[id] === 0) delete status[id];
+      refreshSingleSlotUI(id);
+      refreshSectionCounter(SLOT_TO_SECTION[id]);
+      refreshAllStats();
+      scheduleSaveStatus();
+      return;
+    }
+
+    const slotEl = e.target.closest('.slot');
+    if(slotEl){
       const id = slotEl.dataset.id;
       status[id] = (status[id]||0) + 1;
-      saveStatus();
-      refreshSlot(id);
-      refreshAll();
-    });
-  });
-  document.querySelectorAll('.slot-minus').forEach(btn=>{
-    btn.addEventListener('click', (e)=>{
-      e.stopPropagation();
-      const id = btn.dataset.minus;
-      status[id] = Math.max(0, (status[id]||0) - 1);
-      if(status[id]===0) delete status[id];
-      saveStatus();
-      refreshSlot(id);
-      refreshAll();
-    });
+      refreshSingleSlotUI(id);
+      refreshSectionCounter(SLOT_TO_SECTION[id]);
+      refreshAllStats();
+      scheduleSaveStatus();
+    }
   });
 }
 
-function refreshSlot(id){
+function refreshSingleSlotUI(id){
   const el = document.querySelector(`.slot[data-id="${id}"]`);
   if(!el) return;
   const count = slotCount(id);
@@ -737,7 +728,38 @@ function refreshSlot(id){
   applyFilterToSlot(el);
 }
 
-function refreshAll(){
+function updateAllSlotsUI(){
+  document.querySelectorAll('.slot').forEach(el => {
+    const id = el.dataset.id;
+    const count = slotCount(id);
+    const special = el.classList.contains('special');
+    el.className = slotClasses(count, special);
+    el.dataset.status = count>=2?'repeat':count===1?'have':'missing';
+    el.querySelector('.slot-badge').textContent = getBadgeText(count);
+    applyFilterToSlot(el);
+  });
+}
+
+function refreshSectionCounter(secCode){
+  const sec = ALL_SECTIONS.find(s => s.code === secCode);
+  if(!sec) return;
+  let secHave = 0;
+  sec.slots.forEach(s => {
+    if(slotCount(s.id) >= 1) secHave++;
+  });
+  
+  const dot = document.getElementById('dot-' + secCode);
+  const cnt = document.getElementById('count-' + secCode);
+  if(dot){ 
+    dot.textContent = `${secHave}/${sec.slots.length}`; 
+    dot.parentElement.classList.toggle('complete', secHave === sec.slots.length); 
+  }
+  if(cnt){ 
+    cnt.textContent = `${secHave} / ${sec.slots.length}`; 
+  }
+}
+
+function refreshAllStats(){
   let have=0, missing=0, extra=0;
   ALL_SECTIONS.forEach(sec=>{
     let secHave=0;
@@ -846,7 +868,9 @@ document.getElementById('btnCopyRepeat').addEventListener('click', ()=>{
 document.getElementById('btnReset').addEventListener('click', async ()=>{
   if(!confirm(`Isso vai zerar o álbum do perfil "${currentProfile}". Tem certeza?`)) return;
   status = {};
-  await saveStatus();
+  updateAllSlotsUI();
+  refreshAllStats();
+  scheduleSaveStatus();
 });
 
 /* ===================== CONTROLE MOBILE DRAWER ===================== */
@@ -922,7 +946,6 @@ window.editProfileName = async function(oldName){
     profilesList[idx] = formatted;
     await saveProfilesList();
 
-    // Mover os dados no Firebase
     const oldDoc = doc(db, 'app_copa2026', `profile_${oldName}`);
     const newDoc = doc(db, 'app_copa2026', `profile_${formatted}`);
     await setDoc(newDoc, { status });
