@@ -373,7 +373,7 @@
 
       <div class="header-left">
         <h1 class="title">Álbum da Copa 2026</h1>
-        <div class="subtitle">980 figurinhas · 48 seleções + especiais — toque para marcar que você tem</div>
+        <div class="subtitle">980 figurinhas · 48 seleções + especiais — dados sincronizados na nuvem ☁️</div>
       </div>
       
       <!-- CONTROLE DE PERFIS -->
@@ -394,7 +394,7 @@
 
     <div class="progress-wrap">
       <div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
-      <div class="progress-caption"><span id="progressCaption">0 / 980</span><span id="loadState">carregando...</span></div>
+      <div class="progress-caption"><span id="progressCaption">0 / 980</span><span id="loadState">Conectando...</span></div>
     </div>
 
     <div class="toolbar">
@@ -415,11 +415,30 @@
 
     <div id="pages"></div>
 
-    <footer>Feito para organizar suas trocas — os dados ficam salvos localmente no seu navegador.</footer>
+    <footer>Feito para organizar suas trocas — Sincronizado via Firebase Firestore</footer>
   </main>
 </div>
 
-<script>
+<!-- SDK DO FIREBASE -->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+import { getFirestore, doc, onSnapshot, setDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+// CHAVES DO SEU PROJETO NO FIREBASE
+const firebaseConfig = {
+  apiKey: "AIzaSyC852CSAbZibXwzMUZBT5PUafOTUAcQJag",
+  authDomain: "album-copa-2026-750e8.firebaseapp.com",
+  projectId: "album-copa-2026-750e8",
+  storageBucket: "album-copa-2026-750e8.firebasestorage.app",
+  messagingSenderId: "266594705569",
+  appId: "1:266594705569:web:91a3ec9880c162492a90e0",
+  measurementId: "G-NP3RHVTKBB"
+};
+
+// Inicializa Firebase
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
 /* ===================== DATA ===================== */
 const TEAMS = [
   {code:'ALE', name:'Alemanha', flag:'🇩🇪', conf:'UEFA'},
@@ -495,65 +514,72 @@ const TEAM_SECTIONS = TEAMS.map(t => ({...t, sub:'20 figurinhas · escudo, 18 jo
 const ALL_SECTIONS = [...TEAM_SECTIONS, ...SPECIAL_SECTIONS];
 const TOTAL_STICKERS = ALL_SECTIONS.reduce((s,sec)=>s+sec.slots.length,0);
 
-/* ===================== STATE & PERFIS ===================== */
+/* ===================== STATE ===================== */
 let status = {}; 
 let currentFilter = 'all';
 let currentProfile = 'Joaquim';
 let profilesList = ['Joaquim', 'Matheus', 'João'];
+let unsubscribeStatus = null;
+let unsubscribeProfiles = null;
 
-function getStorageKey(profileName = currentProfile){
-  return `copa2026_profile_${profileName}`;
+/* Escuta lista de perfis em tempo real no Firebase */
+function listenProfilesList(){
+  if(unsubscribeProfiles) unsubscribeProfiles();
+  const profilesDoc = doc(db, 'app_copa2026', 'profiles_config');
+  unsubscribeProfiles = onSnapshot(profilesDoc, (docSnap) => {
+    if(docSnap.exists()){
+      profilesList = docSnap.data().list || ['Joaquim', 'Matheus', 'João'];
+    } else {
+      setDoc(profilesDoc, { list: profilesList });
+    }
+    renderProfileSelector();
+  });
 }
 
-function loadProfilesList(){
-  const savedList = localStorage.getItem('copa2026_profiles');
-  if(savedList){
-    profilesList = JSON.parse(savedList);
-  } else {
-    localStorage.setItem('copa2026_profiles', JSON.stringify(profilesList));
-  }
-  
-  const savedCurrent = localStorage.getItem('copa2026_current_profile');
-  if(savedCurrent && profilesList.includes(savedCurrent)){
-    currentProfile = savedCurrent;
-  } else if(profilesList.length > 0){
-    currentProfile = profilesList[0];
-  }
-}
-
-function renderProfileSelector(){
-  const select = document.getElementById('profileSelect');
-  select.innerHTML = profilesList.map(p => `<option value="${p}" ${p === currentProfile ? 'selected' : ''}>${p}</option>`).join('');
-}
-
-function loadStatus(){
+/* Escuta o status do perfil ativo em tempo real no Firebase */
+function listenStatus(){
   const el = document.getElementById('loadState');
-  try{
-    const savedData = localStorage.getItem(getStorageKey());
-    if(savedData){
-      status = JSON.parse(savedData);
+  el.textContent = 'Sincronizando...';
+  if(unsubscribeStatus) unsubscribeStatus();
+
+  const albumDoc = doc(db, 'app_copa2026', `profile_${currentProfile}`);
+  unsubscribeStatus = onSnapshot(albumDoc, (docSnap) => {
+    if(docSnap.exists()){
+      status = docSnap.data().status || {};
     } else {
       status = {};
     }
-    el.textContent = 'Salvo automaticamente';
-  }catch(e){
-    status = {};
-    el.textContent = 'Novo álbum';
-  }
+    el.textContent = 'Sincronizado na nuvem ☁️';
+    renderPages();
+    refreshAll();
+  }, (err) => {
+    el.textContent = 'Erro ao conectar!';
+  });
 }
 
-function saveStatus(){
+async function saveStatus(){
   const el = document.getElementById('loadState');
   el.textContent = 'Salvando...';
   try {
-    localStorage.setItem(getStorageKey(), JSON.stringify(status));
-    setTimeout(() => { el.textContent = 'Salvo automaticamente'; }, 200);
+    const albumDoc = doc(db, 'app_copa2026', `profile_${currentProfile}`);
+    await setDoc(albumDoc, { status });
+    el.textContent = 'Sincronizado na nuvem ☁️';
   } catch(e) {
     el.textContent = 'Erro ao salvar!';
   }
 }
 
+async function saveProfilesList(){
+  const profilesDoc = doc(db, 'app_copa2026', 'profiles_config');
+  await setDoc(profilesDoc, { list: profilesList });
+}
+
 /* ===================== RENDER ===================== */
+function renderProfileSelector(){
+  const select = document.getElementById('profileSelect');
+  select.innerHTML = profilesList.map(p => `<option value="${p}" ${p === currentProfile ? 'selected' : ''}>${p}</option>`).join('');
+}
+
 function renderSidebar(){
   const nav = document.getElementById('navList');
   let html = '';
@@ -766,12 +792,10 @@ document.getElementById('btnCopyRepeat').addEventListener('click', ()=>{
   }).catch(()=>{ prompt('Copie manualmente:', text); });
 });
 
-document.getElementById('btnReset').addEventListener('click', ()=>{
+document.getElementById('btnReset').addEventListener('click', async ()=>{
   if(!confirm(`Isso vai zerar o álbum do perfil "${currentProfile}". Tem certeza?`)) return;
   status = {};
-  localStorage.removeItem(getStorageKey());
-  renderPages();
-  refreshAll();
+  await saveStatus();
 });
 
 /* ===================== CONTROLE MOBILE DRAWER ===================== */
@@ -794,30 +818,22 @@ overlayEl.addEventListener('click', closeMobileSidebar);
 /* ===================== EVENTOS DE PERFIL & GERENCIAMENTO ===================== */
 document.getElementById('profileSelect').addEventListener('change', (e) => {
   currentProfile = e.target.value;
-  localStorage.setItem('copa2026_current_profile', currentProfile);
-  loadStatus();
-  renderPages();
-  refreshAll();
+  listenStatus();
 });
 
-document.getElementById('btnNewProfile').addEventListener('click', () => {
+document.getElementById('btnNewProfile').addEventListener('click', async () => {
   const name = prompt('Digite o nome do novo perfil:');
   if(name && name.trim()){
     const formattedName = name.trim();
     if(!profilesList.includes(formattedName)){
       profilesList.push(formattedName);
-      localStorage.setItem('copa2026_profiles', JSON.stringify(profilesList));
+      await saveProfilesList();
     }
     currentProfile = formattedName;
-    localStorage.setItem('copa2026_current_profile', currentProfile);
-    renderProfileSelector();
-    loadStatus();
-    renderPages();
-    refreshAll();
+    listenStatus();
   }
 });
 
-/* Modal Gerenciar Perfis */
 const modalManage = document.getElementById('modalManageProfiles');
 
 function renderManageModalList(){
@@ -842,7 +858,7 @@ document.getElementById('btnCloseManageModal').addEventListener('click', () => {
   modalManage.classList.remove('open');
 });
 
-window.editProfileName = function(oldName){
+window.editProfileName = async function(oldName){
   const newName = prompt(`Novo nome para "${oldName}":`, oldName);
   if(newName && newName.trim() && newName.trim() !== oldName){
     const formatted = newName.trim();
@@ -851,65 +867,52 @@ window.editProfileName = function(oldName){
       return;
     }
     
-    // Atualizar na lista
     const idx = profilesList.indexOf(oldName);
     profilesList[idx] = formatted;
-    localStorage.setItem('copa2026_profiles', JSON.stringify(profilesList));
+    await saveProfilesList();
 
-    // Mover os dados salvos para a nova chave do localStorage
-    const oldData = localStorage.getItem(getStorageKey(oldName));
-    if(oldData){
-      localStorage.setItem(getStorageKey(formatted), oldData);
-      localStorage.removeItem(getStorageKey(oldName));
-    }
+    // Mover os dados no Firebase
+    const oldDoc = doc(db, 'app_copa2026', `profile_${oldName}`);
+    const newDoc = doc(db, 'app_copa2026', `profile_${formatted}`);
+    await setDoc(newDoc, { status });
+    await deleteDoc(oldDoc);
 
     if(currentProfile === oldName){
       currentProfile = formatted;
-      localStorage.setItem('copa2026_current_profile', currentProfile);
+      listenStatus();
     }
 
-    renderProfileSelector();
     renderManageModalList();
-    loadStatus();
   }
 };
 
-window.deleteProfileName = function(nameToDelete){
+window.deleteProfileName = async function(nameToDelete){
   if(profilesList.length <= 1){
     alert('Você deve manter pelo menos um perfil cadastrado.');
     return;
   }
 
   if(confirm(`Tem certeza que deseja excluir o perfil "${nameToDelete}" e todos os seus dados?`)){
-    // Remover da lista
     profilesList = profilesList.filter(p => p !== nameToDelete);
-    localStorage.setItem('copa2026_profiles', JSON.stringify(profilesList));
+    await saveProfilesList();
 
-    // Apagar dados do localStorage
-    localStorage.removeItem(getStorageKey(nameToDelete));
+    const docToDelete = doc(db, 'app_copa2026', `profile_${nameToDelete}`);
+    await deleteDoc(docToDelete);
 
-    // Se o perfil excluído era o ativo, muda para o primeiro da lista
     if(currentProfile === nameToDelete){
       currentProfile = profilesList[0];
-      localStorage.setItem('copa2026_current_profile', currentProfile);
-      loadStatus();
-      renderPages();
-      refreshAll();
+      listenStatus();
     }
 
-    renderProfileSelector();
     renderManageModalList();
   }
 };
 
 /* ===================== INIT ===================== */
 (function init(){
-  loadProfilesList();
-  renderProfileSelector();
   renderSidebar();
-  loadStatus();
-  renderPages();
-  refreshAll();
+  listenProfilesList();
+  listenStatus();
 })();
 </script>
 </body>
