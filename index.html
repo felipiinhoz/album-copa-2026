@@ -365,6 +365,9 @@
   </div>
 </div>
 
+<!-- INPUT INVISÍVEL PARA IMPORTAR FILE BACKUP -->
+<input type="file" id="importFileInput" accept=".json" style="display:none;" />
+
 <div class="app">
   <nav class="sidebar" id="sidebar">
     <div class="brand">FIGURINHAS<small>Copa do Mundo 2026 · Panini</small></div>
@@ -380,7 +383,7 @@
     <div class="topbar">
       <div class="header-left">
         <h1 class="title">Álbum da Copa 2026</h1>
-        <div class="subtitle">980 figurinhas · 48 seleções + especiais — dados sincronizados na nuvem ☁️</div>
+        <div class="subtitle">994 figurinhas · 48 seleções + especiais — dados sincronizados na nuvem ☁️</div>
       </div>
       
       <div class="profile-container">
@@ -400,7 +403,7 @@
 
     <div class="progress-wrap">
       <div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
-      <div class="progress-caption"><span id="progressCaption">0 / 980</span><span id="loadState">Conectando...</span></div>
+      <div class="progress-caption"><span id="progressCaption">0 / 994</span><span id="loadState">Conectando...</span></div>
     </div>
 
     <div class="toolbar">
@@ -409,9 +412,10 @@
       <button class="filter-btn" data-filter="have">Tenho</button>
       <button class="filter-btn" data-filter="repeat">Repetidas</button>
       <div class="spacer"></div>
+      <button class="action-btn" id="btnExportBackup">📥 Exportar Backup</button>
+      <button class="action-btn" id="btnImportBackup">📤 Importar Backup</button>
       <button class="action-btn" id="btnCopyMissing">📋 Copiar faltantes</button>
       <button class="action-btn" id="btnCopyRepeat">📋 Copiar repetidas</button>
-      <button class="action-btn" id="btnReset">↺ Zerar álbum</button>
     </div>
 
     <div class="list-section" id="repeatListBox" style="display:none;">
@@ -443,56 +447,77 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-/* ===================== DATA (ORDEM OFICIAL DA PANINI COPA 2026) ===================== */
+/* ===================== DATA (ORDEM EXATA DA PLANILHA DO ÁLBUM) ===================== */
+const SPECIAL_SECTIONS_TOP = [
+  {code:'FWC', name:'FIFA World Cup History (FWC 0-8)', flag:'🏆', sub:'9 figurinhas especiais · FWC 0–8', slots: Array.from({length:9},(_,i)=>({id:`FWC-${i}`, num:i, label:`FWC ${i}`, special:true}))}
+];
+
 const TEAMS = [
+  // Grupo A
   {code:'MEX', name:'México', flag:'🇲🇽', conf:'CONCACAF', group:'Grupo A'},
-  {code:'AFS', name:'África do Sul', flag:'🇿🇦', conf:'CAF', group:'Grupo A'},
-  {code:'COR', name:'Coreia do Sul', flag:'🇰🇷', conf:'AFC', group:'Grupo A'},
-  {code:'TCH', name:'República Tcheca', flag:'🇨🇿', conf:'UEFA', group:'Grupo A'},
+  {code:'RSA', name:'África do Sul', flag:'🇿🇦', conf:'CAF', group:'Grupo A'},
+  {code:'KOR', name:'Coréia do Sul', flag:'🇰🇷', conf:'AFC', group:'Grupo A'},
+  {code:'CZE', name:'Rep. Tcheca', flag:'🇨🇿', conf:'UEFA', group:'Grupo A'},
+  // Grupo B
   {code:'CAN', name:'Canadá', flag:'🇨🇦', conf:'CONCACAF', group:'Grupo B'},
-  {code:'EGI', name:'Egito', flag:'🇪🇬', conf:'CAF', group:'Grupo B'},
-  {code:'IRA', name:'Irã', flag:'🇮🇷', conf:'AFC', group:'Grupo B'},
-  {code:'SUE', name:'Suécia', flag:'🇸🇪', conf:'UEFA', group:'Grupo B'},
-  {code:'EUA', name:'Estados Unidos', flag:'🇺🇸', conf:'CONCACAF', group:'Grupo C'},
-  {code:'SEN', name:'Senegal', flag:'🇸🇳', conf:'CAF', group:'Grupo C'},
-  {code:'JAP', name:'Japão', flag:'🇯🇵', conf:'AFC', group:'Grupo C'},
-  {code:'AUT', name:'Áustria', flag:'🇦🇹', conf:'UEFA', group:'Grupo C'},
-  {code:'ESP', name:'Espanha', flag:'🇪🇸', conf:'UEFA', group:'Grupo D'},
-  {code:'TUN', name:'Tunísia', flag:'🇹🇳', conf:'CAF', group:'Grupo D'},
-  {code:'AUS', name:'Austrália', flag:'🇦🇺', conf:'AFC', group:'Grupo D'},
+  {code:'BIH', name:'Bósnia', flag:'🇧🇦', conf:'UEFA', group:'Grupo B'},
+  {code:'QAT', name:'Catar', flag:'🇶🇦', conf:'AFC', group:'Grupo B'},
+  {code:'SUI', name:'Suíça', flag:'🇨🇭', conf:'UEFA', group:'Grupo B'},
+  // Grupo C
+  {code:'BRA', name:'Brasil', flag:'🇧🇷', conf:'CONMEBOL', group:'Grupo C'},
+  {code:'MAR', name:'Marrocos', flag:'🇲🇦', conf:'CAF', group:'Grupo C'},
+  {code:'HAI', name:'Haiti', flag:'🇭🇹', conf:'CONCACAF', group:'Grupo C'},
+  {code:'SCO', name:'Escócia', flag:'🏴', conf:'UEFA', group:'Grupo C'},
+  // Grupo D
+  {code:'USA', name:'Estados Unidos', flag:'🇺🇸', conf:'CONCACAF', group:'Grupo D'},
   {code:'PAR', name:'Paraguai', flag:'🇵🇾', conf:'CONMEBOL', group:'Grupo D'},
-  {code:'ALE', name:'Alemanha', flag:'🇩🇪', conf:'UEFA', group:'Grupo E'},
-  {code:'CBV', name:'Cabo Verde', flag:'🇨🇻', conf:'CAF', group:'Grupo E'},
-  {code:'CAT', name:'Catar', flag:'🇶🇦', conf:'AFC', group:'Grupo E'},
-  {code:'EQU', name:'Equador', flag:'🇪🇨', conf:'CONMEBOL', group:'Grupo E'},
-  {code:'FRA', name:'França', flag:'🇫🇷', conf:'UEFA', group:'Grupo F'},
-  {code:'GAN', name:'Gana', flag:'🇬🇭', conf:'CAF', group:'Grupo F'},
-  {code:'UZB', name:'Uzbequistão', flag:'🇺ℤ', conf:'AFC', group:'Grupo F'},
-  {code:'COL', name:'Colômbia', flag:'🇨🇴', conf:'CONMEBOL', group:'Grupo F'},
-  {code:'ARG', name:'Argentina', flag:'🇦🇷', conf:'CONMEBOL', group:'Grupo G'},
-  {code:'MAR', name:'Marrocos', flag:'🇲🇦', conf:'CAF', group:'Grupo G'},
-  {code:'JOR', name:'Jordânia', flag:'🇯🇴', conf:'AFC', group:'Grupo G'},
-  {code:'ESC', name:'Escócia', flag:'🏴', conf:'UEFA', group:'Grupo G'},
-  {code:'BRA', name:'Brasil', flag:'🇧🇷', conf:'CONMEBOL', group:'Grupo H'},
-  {code:'CDM', name:'Costa do Marfim', flag:'🇨🇮', conf:'CAF', group:'Grupo H'},
-  {code:'ARS', name:'Arábia Saudita', flag:'🇸🇦', conf:'AFC', group:'Grupo H'},
-  {code:'SUI', name:'Suíça', flag:'🇨🇭', conf:'UEFA', group:'Grupo H'},
-  {code:'ING', name:'Inglaterra', flag:'🏴', conf:'UEFA', group:'Grupo I'},
-  {code:'ARG2', name:'Argélia', flag:'🇩🇿', conf:'CAF', group:'Grupo I'},
-  {code:'URU', name:'Uruguai', flag:'🇺🇾', conf:'CONMEBOL', group:'Grupo I'},
-  {code:'HAI', name:'Haiti', flag:'🇭🇹', conf:'CONCACAF', group:'Grupo I'},
-  {code:'POR', name:'Portugal', flag:'🇵🇹', conf:'UEFA', group:'Grupo J'},
-  {code:'CRO', name:'Croácia', flag:'🇭🇷', conf:'UEFA', group:'Grupo J'},
-  {code:'PAN', name:'Panamá', flag:'🇵🇦', conf:'CONCACAF', group:'Grupo J'},
-  {code:'NZL', name:'Nova Zelândia', flag:'🇳🇿', conf:'OFC', group:'Grupo J'},
-  {code:'HOL', name:'Holanda', flag:'🇳🇱', conf:'UEFA', group:'Grupo K'},
-  {code:'NOR', name:'Noruega', flag:'🇳🇴', conf:'UEFA', group:'Grupo K'},
-  {code:'CUR', name:'Curaçao', flag:'🇨🇼', conf:'CONCACAF', group:'Grupo K'},
-  {code:'RDC', name:'RD Congo', flag:'🇨🇩', conf:'Repescagem', group:'Grupo K'},
-  {code:'BEL', name:'Bélgica', flag:'🇧🇪', conf:'UEFA', group:'Grupo L'},
-  {code:'BIH', name:'Bósnia e Herzegovina', flag:'🇧🇦', conf:'UEFA', group:'Grupo L'},
-  {code:'TUR', name:'Turquia', flag:'🇹🇷', conf:'UEFA', group:'Grupo L'},
-  {code:'IRQ', name:'Iraque', flag:'🇮🇶', conf:'Repescagem', group:'Grupo L'},
+  {code:'AUS', name:'Austrália', flag:'🇦🇺', conf:'AFC', group:'Grupo D'},
+  {code:'TUR', name:'Turquia', flag:'🇹🇷', conf:'UEFA', group:'Grupo D'},
+  // Grupo E
+  {code:'GER', name:'Alemanha', flag:'🇩🇪', conf:'UEFA', group:'Grupo E'},
+  {code:'CUW', name:'Curaçao', flag:'🇨🇼', conf:'CONCACAF', group:'Grupo E'},
+  {code:'CIV', name:'Costa do Marfim', flag:'🇨🇮', conf:'CAF', group:'Grupo E'},
+  {code:'ECU', name:'Equador', flag:'🇪🇨', conf:'CONMEBOL', group:'Grupo E'},
+  // Grupo F
+  {code:'NED', name:'Holanda', flag:'🇳🇱', conf:'UEFA', group:'Grupo F'},
+  {code:'JPN', name:'Japão', flag:'🇯🇵', conf:'AFC', group:'Grupo F'},
+  {code:'SWE', name:'Suécia', flag:'🇸🇪', conf:'UEFA', group:'Grupo F'},
+  {code:'TUN', name:'Tunísia', flag:'🇹🇳', conf:'CAF', group:'Grupo F'},
+  // Grupo G
+  {code:'BEL', name:'Bélgica', flag:'🇧🇪', conf:'UEFA', group:'Grupo G'},
+  {code:'EGY', name:'Egito', flag:'🇪🇬', conf:'CAF', group:'Grupo G'},
+  {code:'IRN', name:'Irã', flag:'🇮🇷', conf:'AFC', group:'Grupo G'},
+  {code:'NZL', name:'Nova Zelândia', flag:'🇳🇿', conf:'OFC', group:'Grupo G'},
+  // Grupo H
+  {code:'ESP', name:'Espanha', flag:'🇪🇸', conf:'UEFA', group:'Grupo H'},
+  {code:'CPV', name:'Cabo Verde', flag:'🇨🇻', conf:'CAF', group:'Grupo H'},
+  {code:'KSA', name:'Arábia Saudita', flag:'🇸🇦', conf:'AFC', group:'Grupo H'},
+  {code:'URU', name:'Uruguai', flag:'🇺🇾', conf:'CONMEBOL', group:'Grupo H'},
+  // Grupo I
+  {code:'FRA', name:'França', flag:'🇫🇷', conf:'UEFA', group:'Grupo I'},
+  {code:'SEN', name:'Senegal', flag:'🇸🇳', conf:'CAF', group:'Grupo I'},
+  {code:'IRQ', name:'Iraque', flag:'🇮🇶', conf:'AFC', group:'Grupo I'},
+  {code:'NOR', name:'Noruega', flag:'🇳🇴', conf:'UEFA', group:'Grupo I'},
+  // Grupo J
+  {code:'ARG', name:'Argentina', flag:'🇦🇷', conf:'CONMEBOL', group:'Grupo J'},
+  {code:'ALG', name:'Argélia', flag:'🇩🇿', conf:'CAF', group:'Grupo J'},
+  {code:'AUT', name:'Áustria', flag:'🇦🇹', conf:'UEFA', group:'Grupo J'},
+  {code:'JOR', name:'Jordânia', flag:'🇯🇴', conf:'AFC', group:'Grupo J'},
+  // Grupo K
+  {code:'POR', name:'Portugal', flag:'🇵🇹', conf:'UEFA', group:'Grupo K'},
+  {code:'COD', name:'Congo', flag:'🇨🇩', conf:'CAF', group:'Grupo K'},
+  {code:'UZB', name:'Uzbequistão', flag:'🇺ℤ', conf:'AFC', group:'Grupo K'},
+  {code:'COL', name:'Colômbia', flag:'🇨🇴', conf:'CONMEBOL', group:'Grupo K'},
+  // Grupo L
+  {code:'ENG', name:'Inglaterra', flag:'🏴', conf:'UEFA', group:'Grupo L'},
+  {code:'CRO', name:'Croácia', flag:'🇭🇷', conf:'UEFA', group:'Grupo L'},
+  {code:'GHA', name:'Gana', flag:'🇬🇭', conf:'CAF', group:'Grupo L'},
+  {code:'PAN', name:'Panamá', flag:'🇵🇦', conf:'CONCACAF', group:'Grupo L'},
+];
+
+const SPECIAL_SECTIONS_BOTTOM = [
+  {code:'FWC_HIST', name:'FIFA World Cup History (FWC 9-19)', flag:'🏆', sub:'11 figurinhas históricas · FWC 9–19', slots: Array.from({length:11},(_,i)=>({id:`FWC-${i+9}`, num:i+9, label:`FWC ${i+9}`, special:true}))},
+  {code:'CC', name:'Figurinhas Coca-Cola', flag:'🥤', sub:'14 figurinhas especiais · CC 1–14', slots: Array.from({length:14},(_,i)=>({id:`CC-${i+1}`, num:i+1, label:`CC ${i+1}`, special:true}))}
 ];
 
 const GROUPS_ORDER = ['Grupo A', 'Grupo B', 'Grupo C', 'Grupo D', 'Grupo E', 'Grupo F', 'Grupo G', 'Grupo H', 'Grupo I', 'Grupo J', 'Grupo K', 'Grupo L'];
@@ -510,17 +535,10 @@ function buildTeamSlots(team){
   return slots;
 }
 
-const SPECIAL_SECTIONS = [
-  {code:'SOMOS', name:'SOMOS26', flag:'🎉', sub:'Figurinha comemorativa', slots:[{id:'SOMOS26', num:1, label:'SOMOS26', special:true}]},
-  {code:'FWC', name:'Troféu, bola e sedes', flag:'🏆', sub:'8 metalizadas · FWC 1–8', slots: Array.from({length:8},(_,i)=>({id:`FWC-${i+1}`, num:i+1, label:`FWC ${i+1}`, special:true}))},
-  {code:'MUS', name:'FIFA Museum', flag:'🏛️', sub:'11 figurinhas · MUS 1–11', slots: Array.from({length:11},(_,i)=>({id:`MUS-${i+1}`, num:i+1, label:`MUS ${i+1}`, special:true}))},
-];
-
 const TEAM_SECTIONS = TEAMS.map(t => ({...t, sub:'20 figurinhas · escudo, foto e 18 jogadores', slots: buildTeamSlots(t)}));
-const ALL_SECTIONS = [...SPECIAL_SECTIONS, ...TEAM_SECTIONS];
+const ALL_SECTIONS = [...SPECIAL_SECTIONS_TOP, ...TEAM_SECTIONS, ...SPECIAL_SECTIONS_BOTTOM];
 const TOTAL_STICKERS = ALL_SECTIONS.reduce((s,sec)=>s+sec.slots.length,0);
 
-/* Mapeamento rápido de slot -> seleção */
 const SLOT_TO_SECTION = {};
 ALL_SECTIONS.forEach(sec => {
   sec.slots.forEach(s => {
@@ -576,7 +594,6 @@ function listenStatus(){
   });
 }
 
-/* DEBOUNCE DO SALVAMENTO PRO FIREBASE */
 function scheduleSaveStatus(){
   const el = document.getElementById('loadState');
   el.textContent = 'Salvando...';
@@ -597,7 +614,7 @@ async function saveProfilesList(){
   await setDoc(profilesDoc, { list: profilesList });
 }
 
-/* ===================== RENDER OTIMIZADO ===================== */
+/* ===================== RENDER ===================== */
 function renderProfileSelector(){
   const select = document.getElementById('profileSelect');
   select.innerHTML = profilesList.map(p => `<option value="${p}" ${p === currentProfile ? 'selected' : ''}>${p}</option>`).join('');
@@ -607,8 +624,8 @@ function renderSidebar(){
   const nav = document.getElementById('navList');
   let html = '';
   
-  html += `<div class="nav-group-title">Especiais</div>`;
-  SPECIAL_SECTIONS.forEach(s=>{
+  html += `<div class="nav-group-title">Início</div>`;
+  SPECIAL_SECTIONS_TOP.forEach(s=>{
     html += `<div class="nav-item" data-jump="${s.code}" data-search="${s.name.toLowerCase()} ${s.code.toLowerCase()}">
       <span class="nav-flag">${s.flag}</span><span>${s.name}</span><span class="nav-dot" id="dot-${s.code}"></span>
     </div>`;
@@ -623,6 +640,13 @@ function renderSidebar(){
         <span class="nav-flag">${t.flag}</span><span>${t.name}</span><span class="nav-dot" id="dot-${t.code}"></span>
       </div>`;
     });
+  });
+
+  html += `<div class="nav-group-title">Especiais</div>`;
+  SPECIAL_SECTIONS_BOTTOM.forEach(s=>{
+    html += `<div class="nav-item" data-jump="${s.code}" data-search="${s.name.toLowerCase()} ${s.code.toLowerCase()}">
+      <span class="nav-flag">${s.flag}</span><span>${s.name}</span><span class="nav-dot" id="dot-${s.code}"></span>
+    </div>`;
   });
 
   nav.innerHTML = html;
@@ -687,7 +711,6 @@ function renderPages(){
   attachSlotEvents();
 }
 
-/* EVENTOS DE CLIQUE SEM RE-RENDER TOTAL DO DOM */
 function attachSlotEvents(){
   const container = document.getElementById('pages');
   
@@ -840,7 +863,77 @@ document.getElementById('navSearch').addEventListener('input', (e)=>{
   if(q && currentFilter!=='all'){ applyFilter(); }
 });
 
-/* ===================== ACTIONS ===================== */
+/* ===================== BACKUP (EXPORTAR / IMPORTAR) ===================== */
+document.getElementById('btnExportBackup').addEventListener('click', async () => {
+  const backupData = {
+    app: "album_copa_2026",
+    exportDate: new Date().toISOString(),
+    profilesList: profilesList,
+    currentProfile: currentProfile,
+    statusData: {}
+  };
+
+  // Coleta os dados de todos os perfis cadastrados
+  for(const prof of profilesList){
+    const albumDoc = doc(db, 'app_copa2026', `profile_${prof}`);
+    // Usamos o status local se for o perfil ativo, senão lemos do estado se disponível
+    backupData.statusData[prof] = (prof === currentProfile) ? status : {};
+  }
+
+  const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(backupData, null, 2));
+  const downloadAnchor = document.createElement('a');
+  downloadAnchor.setAttribute("href", dataStr);
+  downloadAnchor.setAttribute("download", `backup_album_copa_2026_${new Date().toISOString().slice(0,10)}.json`);
+  document.body.appendChild(downloadAnchor);
+  downloadAnchor.click();
+  downloadAnchor.remove();
+});
+
+document.getElementById('btnImportBackup').addEventListener('click', () => {
+  document.getElementById('importFileInput').click();
+});
+
+document.getElementById('importFileInput').addEventListener('change', (e) => {
+  const file = e.target.files[0];
+  if(!file) return;
+
+  const reader = new FileReader();
+  reader.onload = async (evt) => {
+    try {
+      const imported = JSON.parse(evt.target.result);
+      if(imported.app !== "album_copa_2026" || !imported.profilesList){
+        alert("Arquivo de backup inválido!");
+        return;
+      }
+
+      if(confirm("Deseja importar este backup? Ele atualizará seus perfis e figurinhas marcadas.")){
+        profilesList = imported.profilesList;
+        await saveProfilesList();
+
+        for(const prof of profilesList){
+          if(imported.statusData && imported.statusData[prof]){
+            const albumDoc = doc(db, 'app_copa2026', `profile_${prof}`);
+            await setDoc(albumDoc, { status: imported.statusData[prof] });
+          }
+        }
+
+        if(imported.currentProfile && profilesList.includes(imported.currentProfile)){
+          currentProfile = imported.currentProfile;
+        } else {
+          currentProfile = profilesList[0];
+        }
+
+        listenStatus();
+        alert("Backup importado e sincronizado com sucesso!");
+      }
+    } catch(err) {
+      alert("Erro ao ler o arquivo de backup!");
+    }
+  };
+  reader.readAsText(file);
+});
+
+/* ===================== ACTIONS COPIAR ===================== */
 document.getElementById('btnCopyMissing').addEventListener('click', ()=>{
   const lines = [];
   ALL_SECTIONS.forEach(sec=>{
@@ -863,14 +956,6 @@ document.getElementById('btnCopyRepeat').addEventListener('click', ()=>{
   navigator.clipboard.writeText(text).then(()=>{
     alert('Lista de repetidas copiada!');
   }).catch(()=>{ prompt('Copie manualmente:', text); });
-});
-
-document.getElementById('btnReset').addEventListener('click', async ()=>{
-  if(!confirm(`Isso vai zerar o álbum do perfil "${currentProfile}". Tem certeza?`)) return;
-  status = {};
-  updateAllSlotsUI();
-  refreshAllStats();
-  scheduleSaveStatus();
 });
 
 /* ===================== CONTROLE MOBILE DRAWER ===================== */
