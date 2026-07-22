@@ -164,7 +164,7 @@
   .progress-caption{ display:flex; justify-content:space-between; font-family:'Space Mono'; font-size:11px; color:#a9c0ab; margin-top:6px; }
 
   .toolbar{
-    display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-bottom:22px;
+    display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-bottom:22px;
   }
   .filter-btn{
     font-family:'Inter'; font-size:12.5px; font-weight:600; padding:7px 13px;
@@ -174,9 +174,9 @@
   .filter-btn.active{ background:var(--gold); color:var(--pitch-deep); border-color:var(--gold); }
   .toolbar .spacer{ flex:1; }
   .action-btn{
-    font-family:'Inter'; font-size:12.5px; font-weight:600; padding:7px 13px;
+    font-family:'Inter'; font-size:12px; font-weight:600; padding:7px 11px;
     border-radius:8px; border:1px solid var(--line); background:rgba(255,255,255,0.05); color:var(--cream);
-    cursor:pointer; display:flex; align-items:center; gap:6px;
+    cursor:pointer; display:flex; align-items:center; gap:5px;
   }
   .action-btn:hover{ border-color:var(--gold); color:var(--gold-bright); }
 
@@ -413,8 +413,10 @@
       <div class="spacer"></div>
       <button class="action-btn" id="btnExportBackup">📥 Exportar Backup</button>
       <button class="action-btn" id="btnImportBackup">📤 Importar Backup</button>
-      <button class="action-btn" id="btnCopyMissing">📋 Copiar faltantes</button>
-      <button class="action-btn" id="btnCopyRepeat">📋 Copiar repetidas</button>
+      <button class="action-btn" id="btnCopyMissingNormal">📋 Faltantes (Normais)</button>
+      <button class="action-btn" id="btnCopyMissingSpecial">✨ Faltantes (Brilhantes)</button>
+      <button class="action-btn" id="btnCopyRepeatNormal">📋 Repetidas (Normais)</button>
+      <button class="action-btn" id="btnCopyRepeatSpecial">✨ Repetidas (Brilhantes)</button>
     </div>
 
     <div class="list-section" id="repeatListBox" style="display:none;">
@@ -446,7 +448,6 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-/* MAPA COMPLETO DE MIGRAÇÃO DAS SIGLAS ANTIGAS */
 const CODE_MAP = {
   'ALE': 'GER',
   'AFS': 'RSA',
@@ -515,62 +516,50 @@ const SPECIAL_SECTIONS_TOP = [
 ];
 
 const TEAMS = [
-  // Grupo A
   {code:'MEX', name:'México', flag:'🇲🇽', conf:'CONCACAF', group:'Grupo A'},
   {code:'RSA', name:'África do Sul', flag:'🇿🇦', conf:'CAF', group:'Grupo A'},
   {code:'KOR', name:'Coréia do Sul', flag:'🇰🇷', conf:'AFC', group:'Grupo A'},
   {code:'CZE', name:'Rep. Tcheca', flag:'🇨🇿', conf:'UEFA', group:'Grupo A'},
-  // Grupo B
   {code:'CAN', name:'Canadá', flag:'🇨🇦', conf:'CONCACAF', group:'Grupo B'},
   {code:'BIH', name:'Bósnia', flag:'🇧🇦', conf:'UEFA', group:'Grupo B'},
   {code:'QAT', name:'Catar', flag:'🇶🇦', conf:'AFC', group:'Grupo B'},
   {code:'SUI', name:'Suíça', flag:'🇨🇭', conf:'UEFA', group:'Grupo B'},
-  // Grupo C
   {code:'BRA', name:'Brasil', flag:'🇧🇷', conf:'CONMEBOL', group:'Grupo C'},
   {code:'MAR', name:'Marrocos', flag:'🇲🇦', conf:'CAF', group:'Grupo C'},
   {code:'HAI', name:'Haiti', flag:'🇭🇹', conf:'CONCACAF', group:'Grupo C'},
   {code:'SCO', name:'Escócia', flag:'🏴', conf:'UEFA', group:'Grupo C'},
-  // Grupo D
   {code:'USA', name:'Estados Unidos', flag:'🇺🇸', conf:'CONCACAF', group:'Grupo D'},
   {code:'PAR', name:'Paraguai', flag:'🇵🇾', conf:'CONMEBOL', group:'Grupo D'},
   {code:'AUS', name:'Austrália', flag:'🇦🇺', conf:'AFC', group:'Grupo D'},
   {code:'TUR', name:'Turquia', flag:'🇹🇷', conf:'UEFA', group:'Grupo D'},
-  // Grupo E
   {code:'GER', name:'Alemanha', flag:'🇩🇪', conf:'UEFA', group:'Grupo E'},
   {code:'CUW', name:'Curaçao', flag:'🇨🇼', conf:'CONCACAF', group:'Grupo E'},
   {code:'CIV', name:'Costa do Marfim', flag:'🇨🇮', conf:'CAF', group:'Grupo E'},
   {code:'ECU', name:'Equador', flag:'🇪🇨', conf:'CONMEBOL', group:'Grupo E'},
-  // Grupo F
   {code:'NED', name:'Holanda', flag:'🇳🇱', conf:'UEFA', group:'Grupo F'},
   {code:'JPN', name:'Japão', flag:'🇯🇵', conf:'AFC', group:'Grupo F'},
   {code:'SWE', name:'Suécia', flag:'🇸🇪', conf:'UEFA', group:'Grupo F'},
   {code:'TUN', name:'Tunísia', flag:'🇹🇳', conf:'CAF', group:'Grupo F'},
-  // Grupo G
   {code:'BEL', name:'Bélgica', flag:'🇧🇪', conf:'UEFA', group:'Grupo G'},
   {code:'EGY', name:'Egito', flag:'🇪🇬', conf:'CAF', group:'Grupo G'},
   {code:'IRN', name:'Irã', flag:'🇮🇷', conf:'AFC', group:'Grupo G'},
   {code:'NZL', name:'Nova Zelândia', flag:'🇳🇿', conf:'OFC', group:'Grupo G'},
-  // Grupo H
   {code:'ESP', name:'Espanha', flag:'🇪🇸', conf:'UEFA', group:'Grupo H'},
   {code:'CPV', name:'Cabo Verde', flag:'🇨🇻', conf:'CAF', group:'Grupo H'},
   {code:'KSA', name:'Arábia Saudita', flag:'🇸🇦', conf:'AFC', group:'Grupo H'},
   {code:'URU', name:'Uruguai', flag:'🇺🇾', conf:'CONMEBOL', group:'Grupo H'},
-  // Grupo I
   {code:'FRA', name:'França', flag:'🇫🇷', conf:'UEFA', group:'Grupo I'},
   {code:'SEN', name:'Senegal', flag:'🇸🇳', conf:'CAF', group:'Grupo I'},
   {code:'IRQ', name:'Iraque', flag:'🇮🇶', conf:'AFC', group:'Grupo I'},
   {code:'NOR', name:'Noruega', flag:'🇳🇴', conf:'UEFA', group:'Grupo I'},
-  // Grupo J
   {code:'ARG', name:'Argentina', flag:'🇦🇷', conf:'CONMEBOL', group:'Grupo J'},
   {code:'ALG', name:'Argélia', flag:'🇩🇿', conf:'CAF', group:'Grupo J'},
   {code:'AUT', name:'Áustria', flag:'🇦🇹', conf:'UEFA', group:'Grupo J'},
   {code:'JOR', name:'Jordânia', flag:'🇯🇴', conf:'AFC', group:'Grupo J'},
-  // Grupo K
   {code:'POR', name:'Portugal', flag:'🇵🇹', conf:'UEFA', group:'Grupo K'},
   {code:'COD', name:'Congo', flag:'🇨🇩', conf:'CAF', group:'Grupo K'},
   {code:'UZB', name:'Uzbequistão', flag:'🇺ℤ', conf:'AFC', group:'Grupo K'},
   {code:'COL', name:'Colômbia', flag:'🇨🇴', conf:'CONMEBOL', group:'Grupo K'},
-  // Grupo L
   {code:'ENG', name:'Inglaterra', flag:'🏴', conf:'UEFA', group:'Grupo L'},
   {code:'CRO', name:'Croácia', flag:'🇭🇷', conf:'UEFA', group:'Grupo L'},
   {code:'GHA', name:'Gana', flag:'🇬🇭', conf:'CAF', group:'Grupo L'},
@@ -993,28 +982,62 @@ document.getElementById('importFileInput').addEventListener('change', (e) => {
   reader.readAsText(file);
 });
 
-/* ===================== ACTIONS COPIAR ===================== */
-document.getElementById('btnCopyMissing').addEventListener('click', ()=>{
+/* ===================== ACTIONS COPIAR SEPARADO ===================== */
+/* AUXILIAR DE VERIFICAÇÃO SE É ESPECIAL OU ESCUDO BRILHANTE */
+function isSpecialOrEscudo(slot, secCode){
+  // Se for das seções Especiais (FWC, CC) ou se for o Escudo (Nº 1 de uma seleção)
+  return slot.special || slot.num === 1 || secCode === 'FWC' || secCode === 'FWC_HIST' || secCode === 'CC';
+}
+
+// 1. Copiar Faltantes Normais (Jogadores e Fotos)
+document.getElementById('btnCopyMissingNormal').addEventListener('click', ()=>{
   const lines = [];
   ALL_SECTIONS.forEach(sec=>{
-    const missingNums = sec.slots.filter(s=>slotCount(s.id)===0).map(s=>s.num);
+    const missingNums = sec.slots.filter(s => slotCount(s.id) === 0 && !isSpecialOrEscudo(s, sec.code)).map(s => s.num);
     if(missingNums.length) lines.push(`${sec.flag} ${sec.name}: ${missingNums.join(', ')}`);
   });
-  const text = lines.length ? lines.join('\n') : 'Nenhuma figurinha faltando 🎉';
+  const text = lines.length ? lines.join('\n') : 'Nenhuma figurinha normal faltando 🎉';
   navigator.clipboard.writeText(text).then(()=>{
-    alert('Lista de faltantes copiada!');
+    alert('Lista de FALTANTES NORMAIS copiada!');
   }).catch(()=>{ prompt('Copie manualmente:', text); });
 });
 
-document.getElementById('btnCopyRepeat').addEventListener('click', ()=>{
+// 2. Copiar Faltantes Brilhantes (Escudos Nº 1 e Especiais)
+document.getElementById('btnCopyMissingSpecial').addEventListener('click', ()=>{
   const lines = [];
   ALL_SECTIONS.forEach(sec=>{
-    const reps = sec.slots.filter(s=>slotCount(s.id)>=2).map(s=>`${s.num} (+${slotCount(s.id)-1} extra${slotCount(s.id)-1 > 1 ? 's' : ''})`);
+    const missingNums = sec.slots.filter(s => slotCount(s.id) === 0 && isSpecialOrEscudo(s, sec.code)).map(s => `Nº${s.num} (${s.label})`);
+    if(missingNums.length) lines.push(`${sec.flag} ${sec.name}: ${missingNums.join(', ')}`);
+  });
+  const text = lines.length ? lines.join('\n') : 'Nenhuma figurinha brilhante/especial faltando 🎉';
+  navigator.clipboard.writeText(text).then(()=>{
+    alert('Lista de BRILHANTES/ESPECIAIS FALTANTES copiada!');
+  }).catch(()=>{ prompt('Copie manualmente:', text); });
+});
+
+// 3. Copiar Repetidas Normais
+document.getElementById('btnCopyRepeatNormal').addEventListener('click', ()=>{
+  const lines = [];
+  ALL_SECTIONS.forEach(sec=>{
+    const reps = sec.slots.filter(s => slotCount(s.id) >= 2 && !isSpecialOrEscudo(s, sec.code)).map(s => `${s.num} (+${slotCount(s.id)-1})`);
     if(reps.length) lines.push(`${sec.flag} ${sec.name}: ${reps.join(', ')}`);
   });
-  const text = lines.length ? lines.join('\n') : 'Você ainda não tem repetidas.';
+  const text = lines.length ? lines.join('\n') : 'Você não tem repetidas normais.';
   navigator.clipboard.writeText(text).then(()=>{
-    alert('Lista de repetidas copiada!');
+    alert('Lista de REPETIDAS NORMAIS copiada!');
+  }).catch(()=>{ prompt('Copie manualmente:', text); });
+});
+
+// 4. Copiar Repetidas Brilhantes/Especiais
+document.getElementById('btnCopyRepeatSpecial').addEventListener('click', ()=>{
+  const lines = [];
+  ALL_SECTIONS.forEach(sec=>{
+    const reps = sec.slots.filter(s => slotCount(s.id) >= 2 && isSpecialOrEscudo(s, sec.code)).map(s => `Nº${s.num} (+${slotCount(s.id)-1})`);
+    if(reps.length) lines.push(`${sec.flag} ${sec.name}: ${reps.join(', ')}`);
+  });
+  const text = lines.length ? lines.join('\n') : 'Você não tem repetidas brilhantes/especiais.';
+  navigator.clipboard.writeText(text).then(()=>{
+    alert('Lista de REPETIDAS BRILHANTES/ESPECIAIS copiada!');
   }).catch(()=>{ prompt('Copie manualmente:', text); });
 });
 
