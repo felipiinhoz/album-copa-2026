@@ -446,7 +446,7 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-/* MAPA DE CONVERSÃO DE SIGLAS ANTIGAS PARA AS NOVAS */
+/* MAPA COMPLETO DE MIGRAÇÃO DAS SIGLAS ANTIGAS */
 const CODE_MAP = {
   'ALE': 'GER',
   'AFS': 'RSA',
@@ -467,10 +467,10 @@ const CODE_MAP = {
   'ARG2': 'ALG',
   'RDC': 'COD',
   'ING': 'ENG',
-  'GAN': 'GHA'
+  'GAN': 'GHA',
+  'CUR': 'CUW'
 };
 
-/* FUNÇÃO QUE RECUPERA OS DADOS ANTIGOS AUTOMATICAMENTE */
 function migrateOldData(rawStatus){
   if(!rawStatus) return {};
   const migrated = {};
@@ -926,7 +926,7 @@ document.getElementById('navSearch').addEventListener('input', (e)=>{
   if(q && currentFilter!=='all'){ applyFilter(); }
 });
 
-/* ===================== BACKUP (EXPORTAR / IMPORTAR) ===================== */
+/* ===================== BACKUP ===================== */
 document.getElementById('btnExportBackup').addEventListener('click', async () => {
   const backupData = {
     app: "album_copa_2026",
