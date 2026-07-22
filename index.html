@@ -519,13 +519,29 @@ const TEAMS = [
 
 const GROUPS_ORDER = ['Grupo A', 'Grupo B', 'Grupo C', 'Grupo D', 'Grupo E', 'Grupo F', 'Grupo G', 'Grupo H', 'Grupo I', 'Grupo J', 'Grupo K', 'Grupo L'];
 
+/* CONSTRUÇÃO REAL DO ÁLBUM:
+   - Nº 1: Escudo (Especial)
+   - Nº 2 a 12: Jogadores 1 a 11
+   - Nº 13: Foto do time (Especial)
+   - Nº 14 a 20: Jogadores 12 a 18
+*/
 function buildTeamSlots(team){
   const slots = [];
   slots.push({id:`${team.code}-01`, num:1, label:'Escudo', special:true});
-  for(let i=1;i<=18;i++){
+  
+  // Jogadores 1 a 11 (Nº 2 a 12)
+  for(let i=1; i<=11; i++){
     slots.push({id:`${team.code}-${String(i+1).padStart(2,'0')}`, num:i+1, label:`Jogador ${i}`, special:false});
   }
-  slots.push({id:`${team.code}-20`, num:20, label:'Foto do time', special:true});
+  
+  // Foto do time (Nº 13)
+  slots.push({id:`${team.code}-13`, num:13, label:'Foto do time', special:true});
+  
+  // Jogadores 12 a 18 (Nº 14 a 20)
+  for(let i=12; i<=18; i++){
+    slots.push({id:`${team.code}-${String(i+2).padStart(2,'0')}`, num:i+2, label:`Jogador ${i}`, special:false});
+  }
+  
   return slots;
 }
 
@@ -535,7 +551,7 @@ const SPECIAL_SECTIONS = [
   {code:'MUS', name:'FIFA Museum', flag:'🏛️', sub:'11 figurinhas · MUS 1–11', slots: Array.from({length:11},(_,i)=>({id:`MUS-${i+1}`, num:i+1, label:`MUS ${i+1}`, special:true}))},
 ];
 
-const TEAM_SECTIONS = TEAMS.map(t => ({...t, sub:'20 figurinhas · escudo, 18 jogadores e foto', slots: buildTeamSlots(t)}));
+const TEAM_SECTIONS = TEAMS.map(t => ({...t, sub:'20 figurinhas · escudo, foto e 18 jogadores', slots: buildTeamSlots(t)}));
 const ALL_SECTIONS = [...SPECIAL_SECTIONS, ...TEAM_SECTIONS];
 const TOTAL_STICKERS = ALL_SECTIONS.reduce((s,sec)=>s+sec.slots.length,0);
 
@@ -648,11 +664,6 @@ function slotClasses(count, special){
   return cls;
 }
 
-/* FORMATADOR DE TEXTO DOS BADGES:
-   - 0: vazio
-   - 1: ✓ tenho
-   - 2 ou +: +1 extra, +2 extras, etc.
-*/
 function getBadgeText(count){
   if(count === 1) return '✓ tenho';
   if(count >= 2) {
