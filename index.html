@@ -268,7 +268,7 @@
 
   .slot-badge{
     position:absolute; bottom:5px; left:0; right:0; text-align:center;
-    font-family:'Space Mono'; font-weight:700; font-size:10.5px; color:var(--red);
+    font-family:'Space Mono'; font-weight:700; font-size:10px; color:var(--red);
   }
   .slot.have:not(.repeat) .slot-badge{ color:#2f7a4d; }
   .slot-minus{
@@ -347,7 +347,7 @@
     .slot { padding: 6px 3px 22px; min-height: 60px; }
     .slot-num { font-size: 9px; }
     .slot-label { font-size: 10px; }
-    .slot-badge { font-size: 9.5px; }
+    .slot-badge { font-size: 9px; }
 
     .toolbar { gap: 6px; }
     .filter-btn { padding: 6px 10px; font-size: 11.5px; }
@@ -423,7 +423,7 @@
     </div>
 
     <div class="list-section" id="repeatListBox" style="display:none;">
-      <h3>Suas repetidas</h3>
+      <h3>Suas repetidas para troca</h3>
       <div class="chips" id="repeatChips"></div>
     </div>
 
@@ -648,6 +648,20 @@ function slotClasses(count, special){
   return cls;
 }
 
+/* FORMATADOR DE TEXTO DOS BADGES:
+   - 0: vazio
+   - 1: ✓ tenho
+   - 2 ou +: +1 extra, +2 extras, etc.
+*/
+function getBadgeText(count){
+  if(count === 1) return '✓ tenho';
+  if(count >= 2) {
+    const extra = count - 1;
+    return `+${extra} extra${extra > 1 ? 's' : ''}`;
+  }
+  return '';
+}
+
 function renderPages(){
   const container = document.getElementById('pages');
   let html = '';
@@ -667,7 +681,7 @@ function renderPages(){
       html += `<div class="${slotClasses(count, slot.special)}" data-id="${slot.id}" data-status="${count>=2?'repeat':count===1?'have':'missing'}">
         <div class="slot-num">Nº ${slot.num}</div>
         <div class="slot-label">${slot.label}</div>
-        <div class="slot-badge">${count>=2 ? 'x'+count : (count===1?'✓ tenho':'')}</div>
+        <div class="slot-badge">${getBadgeText(count)}</div>
         <div class="slot-minus" data-minus="${slot.id}">−</div>
       </div>`;
     });
@@ -708,7 +722,7 @@ function refreshSlot(id){
   const special = el.classList.contains('special');
   el.className = slotClasses(count, special);
   el.dataset.status = count>=2?'repeat':count===1?'have':'missing';
-  el.querySelector('.slot-badge').textContent = count>=2 ? 'x'+count : (count===1?'✓ tenho':'');
+  el.querySelector('.slot-badge').textContent = getBadgeText(count);
   applyFilterToSlot(el);
 }
 
@@ -749,7 +763,7 @@ function renderRepeatChips(){
   if(!items.length){ box.style.display='none'; return; }
   box.style.display='block';
   wrap.innerHTML = items.map(it=>
-    `<span class="chip repeat">${it.sec.flag} ${it.sec.name} nº${it.slot.num} · +${it.extra}</span>`
+    `<span class="chip repeat">${it.sec.flag} ${it.sec.name} nº${it.slot.num} · ${it.extra} extra${it.extra > 1 ? 's' : ''}</span>`
   ).join('');
 }
 
@@ -809,7 +823,7 @@ document.getElementById('btnCopyMissing').addEventListener('click', ()=>{
 document.getElementById('btnCopyRepeat').addEventListener('click', ()=>{
   const lines = [];
   ALL_SECTIONS.forEach(sec=>{
-    const reps = sec.slots.filter(s=>slotCount(s.id)>=2).map(s=>`${s.num} (+${slotCount(s.id)-1})`);
+    const reps = sec.slots.filter(s=>slotCount(s.id)>=2).map(s=>`${s.num} (+${slotCount(s.id)-1} extra${slotCount(s.id)-1 > 1 ? 's' : ''})`);
     if(reps.length) lines.push(`${sec.flag} ${sec.name}: ${reps.join(', ')}`);
   });
   const text = lines.length ? lines.join('\n') : 'Você ainda não tem repetidas.';
