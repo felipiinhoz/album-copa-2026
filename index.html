@@ -103,17 +103,21 @@
   }
   .subtitle{ color:#a9c0ab; font-size:13.5px; margin-top:6px; }
 
-  .mobile-menu-btn {
+  /* BOTÃO MOBILE FIXO NO TOPO DA TELA */
+  .header-top-row {
     display: none;
+  }
+  .mobile-menu-btn {
     font-family: 'Inter';
     font-size: 13px;
-    font-weight: 600;
-    padding: 8px 14px;
-    border-radius: 8px;
+    font-weight: 700;
+    padding: 10px 16px;
+    border-radius: 20px;
     border: 1px solid var(--gold);
-    background: rgba(217,164,65,0.15);
+    background: var(--pitch-deep);
     color: var(--gold-bright);
     cursor: pointer;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.4);
   }
 
   /* Perfis UI */
@@ -180,7 +184,7 @@
   }
   .action-btn:hover{ border-color:var(--gold); color:var(--gold-bright); }
 
-  /* Modal de Gerenciamento de Perfis */
+  /* Modal Gerenciamento de Perfis */
   .modal-overlay {
     position: fixed; top:0; left:0; right:0; bottom:0;
     background: rgba(0,0,0,0.7); z-index: 200; display: none;
@@ -211,7 +215,7 @@
     margin-bottom:22px;
     color:var(--ink);
     box-shadow:0 10px 30px rgba(0,0,0,0.25);
-    scroll-margin-top:20px;
+    scroll-margin-top:70px;
   }
   .page-header{
     display:flex; align-items:center; gap:12px; margin-bottom:14px;
@@ -293,28 +297,37 @@
 
   .sidebar-overlay {
     position: fixed; top:0; left:0; right:0; bottom:0;
-    background: rgba(0,0,0,0.6); z-index: 90; display: none;
+    background: rgba(0,0,0,0.6); z-index: 150; display: none;
     backdrop-filter: blur(2px);
   }
 
   footer{ text-align:center; color:#6f8a75; font-size:11.5px; margin-top:30px; font-family:'Space Mono'; }
 
+  /* RESPONSIVIDADE MOBILE (<= 880px) */
   @media (max-width: 880px){
-    .mobile-menu-btn { display: inline-flex; align-items: center; }
+    .header-top-row {
+      display: flex;
+      position: sticky;
+      top: 12px;
+      z-index: 80;
+      justify-content: flex-start;
+      margin-bottom: 8px;
+    }
+
     .sidebar {
       position: fixed; top: 0; left: 0;
       transform: translateX(-100%);
       box-shadow: 4px 0 20px rgba(0,0,0,0.5);
+      z-index: 200;
     }
     .sidebar.open { transform: translateX(0); }
     .sidebar-overlay.open { display: block; }
 
-    .main{ padding:16px 12px 60px; }
+    .main{ padding:12px 12px 60px; }
     h1.title{ font-size: 32px; }
     .subtitle{ font-size: 12px; }
 
     .topbar { flex-direction: column; align-items: stretch; gap: 12px; }
-    .header-top-row { display: flex; justify-content: space-between; align-items: center; width: 100%; }
     
     .profile-container { width: 100%; justify-content: space-between; }
     .profile-container select { flex: 1; }
@@ -366,11 +379,12 @@
   </nav>
 
   <main class="main">
-    <div class="topbar">
-      <div class="header-top-row">
-        <button class="mobile-menu-btn" id="btnToggleMenu">☰ Seleções</button>
-      </div>
+    <!-- BOTÃO FIXO DE SELEÇÕES NO MOBILE -->
+    <div class="header-top-row">
+      <button class="mobile-menu-btn" id="btnToggleMenu">☰ Seleções</button>
+    </div>
 
+    <div class="topbar">
       <div class="header-left">
         <h1 class="title">Álbum da Copa 2026</h1>
         <div class="subtitle">980 figurinhas · 48 seleções + especiais — dados sincronizados na nuvem ☁️</div>
@@ -439,60 +453,71 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-/* ===================== DATA ===================== */
+/* ===================== DATA (ORDEM OFICIAL DA PANINI COPA 2026) ===================== */
 const TEAMS = [
-  {code:'ALE', name:'Alemanha', flag:'🇩🇪', conf:'UEFA'},
-  {code:'CRO', name:'Croácia', flag:'🇭🇷', conf:'UEFA'},
-  {code:'FRA', name:'França', flag:'🇫🇷', conf:'UEFA'},
-  {code:'HOL', name:'Holanda', flag:'🇳🇱', conf:'UEFA'},
-  {code:'ING', name:'Inglaterra', flag:'🏴', conf:'UEFA'},
-  {code:'POR', name:'Portugal', flag:'🇵🇹', conf:'UEFA'},
-  {code:'NOR', name:'Noruega', flag:'🇳🇴', conf:'UEFA'},
-  {code:'AUT', name:'Áustria', flag:'🇦🇹', conf:'UEFA'},
-  {code:'BEL', name:'Bélgica', flag:'🇧🇪', conf:'UEFA'},
-  {code:'ESC', name:'Escócia', flag:'🏴', conf:'UEFA'},
-  {code:'ESP', name:'Espanha', flag:'🇪🇸', conf:'UEFA'},
-  {code:'SUI', name:'Suíça', flag:'🇨🇭', conf:'UEFA'},
-  {code:'BIH', name:'Bósnia e Herzegovina', flag:'🇧🇦', conf:'UEFA'},
-  {code:'TCH', name:'República Tcheca', flag:'🇨🇿', conf:'UEFA'},
-  {code:'TUR', name:'Turquia', flag:'🇹🇷', conf:'UEFA'},
-  {code:'SUE', name:'Suécia', flag:'🇸🇪', conf:'UEFA'},
-  {code:'ARG2', name:'Argélia', flag:'🇩🇿', conf:'CAF'},
-  {code:'CBV', name:'Cabo Verde', flag:'🇨🇻', conf:'CAF'},
-  {code:'CDM', name:'Costa do Marfim', flag:'🇨🇮', conf:'CAF'},
-  {code:'EGI', name:'Egito', flag:'🇪🇬', conf:'CAF'},
-  {code:'GAN', name:'Gana', flag:'🇬🇭', conf:'CAF'},
-  {code:'MAR', name:'Marrocos', flag:'🇲🇦', conf:'CAF'},
-  {code:'SEN', name:'Senegal', flag:'🇸🇳', conf:'CAF'},
-  {code:'AFS', name:'África do Sul', flag:'🇿🇦', conf:'CAF'},
-  {code:'TUN', name:'Tunísia', flag:'🇹🇳', conf:'CAF'},
-  {code:'AUS', name:'Austrália', flag:'🇦🇺', conf:'AFC'},
-  {code:'IRA', name:'Irã', flag:'🇮🇷', conf:'AFC'},
-  {code:'JAP', name:'Japão', flag:'🇯🇵', conf:'AFC'},
-  {code:'JOR', name:'Jordânia', flag:'🇯🇴', conf:'AFC'},
-  {code:'COR', name:'Coreia do Sul', flag:'🇰🇷', conf:'AFC'},
-  {code:'CAT', name:'Catar', flag:'🇶🇦', conf:'AFC'},
-  {code:'ARS', name:'Arábia Saudita', flag:'🇸🇦', conf:'AFC'},
-  {code:'UZB', name:'Uzbequistão', flag:'🇺ℤ', conf:'AFC'},
-  {code:'ARG', name:'Argentina', flag:'🇦🇷', conf:'CONMEBOL'},
-  {code:'BRA', name:'Brasil', flag:'🇧🇷', conf:'CONMEBOL'},
-  {code:'COL', name:'Colômbia', flag:'🇨🇴', conf:'CONMEBOL'},
-  {code:'EQU', name:'Equador', flag:'🇪🇨', conf:'CONMEBOL'},
-  {code:'PAR', name:'Paraguai', flag:'🇵🇾', conf:'CONMEBOL'},
-  {code:'URU', name:'Uruguai', flag:'🇺🇾', conf:'CONMEBOL'},
-  {code:'CAN', name:'Canadá', flag:'🇨🇦', conf:'CONCACAF'},
-  {code:'MEX', name:'México', flag:'🇲🇽', conf:'CONCACAF'},
-  {code:'EUA', name:'Estados Unidos', flag:'🇺🇸', conf:'CONCACAF'},
-  {code:'CUR', name:'Curaçao', flag:'🇨🇼', conf:'CONCACAF'},
-  {code:'HAI', name:'Haiti', flag:'🇭🇹', conf:'CONCACAF'},
-  {code:'PAN', name:'Panamá', flag:'🇵🇦', conf:'CONCACAF'},
-  {code:'NZL', name:'Nova Zelândia', flag:'🇳🇿', conf:'OFC'},
-  {code:'RDC', name:'RD Congo', flag:'🇨🇩', conf:'Repescagem'},
-  {code:'IRQ', name:'Iraque', flag:'🇮🇶', conf:'Repescagem'},
+  // GRUPO A
+  {code:'MEX', name:'México', flag:'🇲🇽', conf:'CONCACAF', group:'Grupo A'},
+  {code:'AFS', name:'África do Sul', flag:'🇿🇦', conf:'CAF', group:'Grupo A'},
+  {code:'COR', name:'Coreia do Sul', flag:'🇰🇷', conf:'AFC', group:'Grupo A'},
+  {code:'TCH', name:'República Tcheca', flag:'🇨🇿', conf:'UEFA', group:'Grupo A'},
+  // GRUPO B
+  {code:'CAN', name:'Canadá', flag:'🇨🇦', conf:'CONCACAF', group:'Grupo B'},
+  {code:'EGI', name:'Egito', flag:'🇪🇬', conf:'CAF', group:'Grupo B'},
+  {code:'IRA', name:'Irã', flag:'🇮🇷', conf:'AFC', group:'Grupo B'},
+  {code:'SUE', name:'Suécia', flag:'🇸🇪', conf:'UEFA', group:'Grupo B'},
+  // GRUPO C
+  {code:'EUA', name:'Estados Unidos', flag:'🇺🇸', conf:'CONCACAF', group:'Grupo C'},
+  {code:'SEN', name:'Senegal', flag:'🇸🇳', conf:'CAF', group:'Grupo C'},
+  {code:'JAP', name:'Japão', flag:'🇯🇵', conf:'AFC', group:'Grupo C'},
+  {code:'AUT', name:'Áustria', flag:'🇦🇹', conf:'UEFA', group:'Grupo C'},
+  // GRUPO D
+  {code:'ESP', name:'Espanha', flag:'🇪🇸', conf:'UEFA', group:'Grupo D'},
+  {code:'TUN', name:'Tunísia', flag:'🇹🇳', conf:'CAF', group:'Grupo D'},
+  {code:'AUS', name:'Austrália', flag:'🇦🇺', conf:'AFC', group:'Grupo D'},
+  {code:'PAR', name:'Paraguai', flag:'🇵🇾', conf:'CONMEBOL', group:'Grupo D'},
+  // GRUPO E
+  {code:'ALE', name:'Alemanha', flag:'🇩🇪', conf:'UEFA', group:'Grupo E'},
+  {code:'CBV', name:'Cabo Verde', flag:'🇨🇻', conf:'CAF', group:'Grupo E'},
+  {code:'CAT', name:'Catar', flag:'🇶🇦', conf:'AFC', group:'Grupo E'},
+  {code:'EQU', name:'Equador', flag:'🇪🇨', conf:'CONMEBOL', group:'Grupo E'},
+  // GRUPO F
+  {code:'FRA', name:'França', flag:'🇫🇷', conf:'UEFA', group:'Grupo F'},
+  {code:'GAN', name:'Gana', flag:'🇬🇭', conf:'CAF', group:'Grupo F'},
+  {code:'UZB', name:'Uzbequistão', flag:'🇺ℤ', conf:'AFC', group:'Grupo F'},
+  {code:'COL', name:'Colômbia', flag:'🇨🇴', conf:'CONMEBOL', group:'Grupo F'},
+  // GRUPO G
+  {code:'ARG', name:'Argentina', flag:'🇦🇷', conf:'CONMEBOL', group:'Grupo G'},
+  {code:'MAR', name:'Marrocos', flag:'🇲🇦', conf:'CAF', group:'Grupo G'},
+  {code:'JOR', name:'Jordânia', flag:'🇯🇴', conf:'AFC', group:'Grupo G'},
+  {code:'ESC', name:'Escócia', flag:'🏴', conf:'UEFA', group:'Grupo G'},
+  // GRUPO H
+  {code:'BRA', name:'Brasil', flag:'🇧🇷', conf:'CONMEBOL', group:'Grupo H'},
+  {code:'CDM', name:'Costa do Marfim', flag:'🇨🇮', conf:'CAF', group:'Grupo H'},
+  {code:'ARS', name:'Arábia Saudita', flag:'🇸🇦', conf:'AFC', group:'Grupo H'},
+  {code:'SUI', name:'Suíça', flag:'🇨🇭', conf:'UEFA', group:'Grupo H'},
+  // GRUPO I
+  {code:'ING', name:'Inglaterra', flag:'🏴', conf:'UEFA', group:'Grupo I'},
+  {code:'ARG2', name:'Argélia', flag:'🇩🇿', conf:'CAF', group:'Grupo I'},
+  {code:'URU', name:'Uruguai', flag:'🇺🇾', conf:'CONMEBOL', group:'Grupo I'},
+  {code:'HAI', name:'Haiti', flag:'🇭🇹', conf:'CONCACAF', group:'Grupo I'},
+  // GRUPO J
+  {code:'POR', name:'Portugal', flag:'🇵🇹', conf:'UEFA', group:'Grupo J'},
+  {code:'CRO', name:'Croácia', flag:'🇭🇷', conf:'UEFA', group:'Grupo J'},
+  {code:'PAN', name:'Panamá', flag:'🇵🇦', conf:'CONCACAF', group:'Grupo J'},
+  {code:'NZL', name:'Nova Zelândia', flag:'🇳🇿', conf:'OFC', group:'Grupo J'},
+  // GRUPO K
+  {code:'HOL', name:'Holanda', flag:'🇳🇱', conf:'UEFA', group:'Grupo K'},
+  {code:'NOR', name:'Noruega', flag:'🇳🇴', conf:'UEFA', group:'Grupo K'},
+  {code:'CUR', name:'Curaçao', flag:'🇨🇼', conf:'CONCACAF', group:'Grupo K'},
+  {code:'RDC', name:'RD Congo', flag:'🇨🇩', conf:'Repescagem', group:'Grupo K'},
+  // GRUPO L
+  {code:'BEL', name:'Bélgica', flag:'🇧🇪', conf:'UEFA', group:'Grupo L'},
+  {code:'BIH', name:'Bósnia e Herzegovina', flag:'🇧🇦', conf:'UEFA', group:'Grupo L'},
+  {code:'TUR', name:'Turquia', flag:'🇹🇷', conf:'UEFA', group:'Grupo L'},
+  {code:'IRQ', name:'Iraque', flag:'🇮🇶', conf:'Repescagem', group:'Grupo L'},
 ];
 
-const CONF_ORDER = ['UEFA','CAF','AFC','CONMEBOL','CONCACAF','OFC','Repescagem'];
-const CONF_LABEL = {UEFA:'Europa (UEFA)', CAF:'África (CAF)', AFC:'Ásia (AFC)', CONMEBOL:'América do Sul (CONMEBOL)', CONCACAF:'América do Norte/Caribe (CONCACAF)', OFC:'Oceania (OFC)', Repescagem:'Repescagem intercontinental'};
+const GROUPS_ORDER = ['Grupo A', 'Grupo B', 'Grupo C', 'Grupo D', 'Grupo E', 'Grupo F', 'Grupo G', 'Grupo H', 'Grupo I', 'Grupo J', 'Grupo K', 'Grupo L'];
 
 function buildTeamSlots(team){
   const slots = [];
@@ -511,7 +536,7 @@ const SPECIAL_SECTIONS = [
 ];
 
 const TEAM_SECTIONS = TEAMS.map(t => ({...t, sub:'20 figurinhas · escudo, 18 jogadores e foto', slots: buildTeamSlots(t)}));
-const ALL_SECTIONS = [...TEAM_SECTIONS, ...SPECIAL_SECTIONS];
+const ALL_SECTIONS = [...SPECIAL_SECTIONS, ...TEAM_SECTIONS];
 const TOTAL_STICKERS = ALL_SECTIONS.reduce((s,sec)=>s+sec.slots.length,0);
 
 /* ===================== STATE ===================== */
@@ -522,7 +547,6 @@ let profilesList = ['Joaquim', 'Matheus', 'João'];
 let unsubscribeStatus = null;
 let unsubscribeProfiles = null;
 
-/* Escuta lista de perfis em tempo real no Firebase */
 function listenProfilesList(){
   if(unsubscribeProfiles) unsubscribeProfiles();
   const profilesDoc = doc(db, 'app_copa2026', 'profiles_config');
@@ -536,7 +560,6 @@ function listenProfilesList(){
   });
 }
 
-/* Escuta o status do perfil ativo em tempo real no Firebase */
 function listenStatus(){
   const el = document.getElementById('loadState');
   el.textContent = 'Sincronizando...';
@@ -583,22 +606,25 @@ function renderProfileSelector(){
 function renderSidebar(){
   const nav = document.getElementById('navList');
   let html = '';
-  CONF_ORDER.forEach(conf => {
-    const teams = TEAM_SECTIONS.filter(t=>t.conf===conf);
-    if(!teams.length) return;
-    html += `<div class="nav-group-title">${CONF_LABEL[conf]}</div>`;
-    teams.forEach(t => {
-      html += `<div class="nav-item" data-jump="${t.code}" data-search="${t.name.toLowerCase()} ${t.code.toLowerCase()}">
-        <span class="nav-flag">${t.flag}</span><span>${t.name}</span><span class="nav-dot" id="dot-${t.code}"></span>
-      </div>`;
-    });
-  });
+  
   html += `<div class="nav-group-title">Especiais</div>`;
   SPECIAL_SECTIONS.forEach(s=>{
     html += `<div class="nav-item" data-jump="${s.code}" data-search="${s.name.toLowerCase()} ${s.code.toLowerCase()}">
       <span class="nav-flag">${s.flag}</span><span>${s.name}</span><span class="nav-dot" id="dot-${s.code}"></span>
     </div>`;
   });
+
+  GROUPS_ORDER.forEach(grp => {
+    const teams = TEAM_SECTIONS.filter(t=>t.group===grp);
+    if(!teams.length) return;
+    html += `<div class="nav-group-title">${grp}</div>`;
+    teams.forEach(t => {
+      html += `<div class="nav-item" data-jump="${t.code}" data-search="${t.name.toLowerCase()} ${t.code.toLowerCase()}">
+        <span class="nav-flag">${t.flag}</span><span>${t.name}</span><span class="nav-dot" id="dot-${t.code}"></span>
+      </div>`;
+    });
+  });
+
   nav.innerHTML = html;
 
   nav.querySelectorAll('.nav-item').forEach(item=>{
